@@ -82,5 +82,5 @@ config_map = {
     "development": DevelopmentConfig,
     "testing":     TestingConfig,
     "production":  ProductionConfig,
-    "default":     DevelopmentConfig,  # default to dev
+    "default":     ProductionConfig,  # default to dev
 }
