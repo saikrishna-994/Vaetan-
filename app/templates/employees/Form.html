@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% if emp %}Edit {{ emp.full_name }}{% else %}Add Employee{% endif %} — Vaetan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0F1117; --surface:#181C27; --surface-2:#1E2333;
+      --border:rgba(255,255,255,0.07); --accent:#6C63FF;
+      --accent-soft:rgba(108,99,255,0.10); --accent-glow:rgba(108,99,255,0.25);
+      --text-1:#F0F2F8; --text-2:#8B90A7; --text-3:#555A72;
+      --green:#22C55E; --red:#F43F5E; --amber:#F59E0B; --blue:#3B82F6;
+      --sidebar-w:240px; --radius:14px; --radius-sm:8px;
+      --font-display:'Sora',sans-serif; --font-body:'Inter',sans-serif;
+    }
+    html,body { height:100%; background:var(--bg); font-family:var(--font-body); color:var(--text-1); -webkit-font-smoothing:antialiased; }
+    .layout { display:flex; min-height:100vh; }
+
+    /* Sidebar (same as index) */
+    .sidebar { width:var(--sidebar-w); background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:100; }
+    .sidebar-brand { display:flex; align-items:center; gap:10px; padding:24px 20px; border-bottom:1px solid var(--border); }
+    .brand-mark { width:34px; height:34px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:15px; color:#fff; flex-shrink:0; }
+    .brand-name { font-family:var(--font-display); font-size:18px; font-weight:700; }
+    .sidebar-nav { flex:1; padding:16px 12px; display:flex; flex-direction:column; gap:2px; }
+    .nav-section-label { font-size:10px; font-weight:500; color:var(--text-3); letter-spacing:.08em; text-transform:uppercase; padding:12px 8px 6px; }
+    .nav-link { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); text-decoration:none; color:var(--text-2); font-size:13px; font-weight:500; transition:background .15s,color .15s; }
+    .nav-link:hover { background:var(--surface-2); color:var(--text-1); }
+    .nav-link.active { background:var(--accent-soft); color:var(--accent); }
+    .nav-icon { font-size:15px; width:20px; text-align:center; }
+    .sidebar-footer { padding:16px 12px; border-top:1px solid var(--border); }
+    .user-pill { display:flex; align-items:center; gap:10px; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius-sm); margin-bottom:8px; }
+    .user-avatar { width:30px; height:30px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#fff; }
+    .user-info { flex:1; min-width:0; }
+    .user-name { font-size:12px; font-weight:500; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .user-role { font-size:10px; color:var(--text-3); }
+    .logout-btn { display:flex; align-items:center; gap:8px; width:100%; padding:8px 12px; background:none; border:none; color:var(--text-3); font-size:12px; font-family:var(--font-body); cursor:pointer; border-radius:var(--radius-sm); text-decoration:none; }
+    .logout-btn:hover { color:var(--red); }
+
+    /* Main */
+    .main { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; }
+    .topbar { height:60px; background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 28px; position:sticky; top:0; z-index:50; }
+    .topbar-left h1 { font-size:16px; font-weight:600; color:var(--text-1); }
+    .topbar-left p  { font-size:12px; color:var(--text-3); margin-top:1px; }
+    .content { padding:28px; max-width:900px; }
+
+    /* Flash */
+    .flash-list { list-style:none; margin-bottom:20px; display:flex; flex-direction:column; gap:8px; }
+    .flash { padding:10px 14px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px; }
+    .flash.danger { background:rgba(244,63,94,0.12); color:var(--red); border:1px solid rgba(244,63,94,0.2); }
+
+    /* Form sections */
+    .form-section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:20px; overflow:hidden; }
+    .section-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:10px; }
+    .section-icon  { font-size:16px; }
+    .section-title { font-size:14px; font-weight:600; color:var(--text-1); }
+    .section-sub   { font-size:11px; color:var(--text-3); margin-left:auto; }
+    .section-body  { padding:20px; display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .section-body.full { grid-template-columns:1fr; }
+    .section-body.three { grid-template-columns:1fr 1fr 1fr; }
+
+    /* Fields */
+    .field { display:flex; flex-direction:column; gap:6px; }
+    .field.span2 { grid-column:span 2; }
+    .field.span3 { grid-column:span 3; }
+    .field label { font-size:12px; font-weight:500; color:var(--text-2); }
+    .field label span { color:var(--red); margin-left:2px; }
+    .field input, .field select, .field textarea {
+      background:var(--surface-2); border:1px solid var(--border);
+      border-radius:var(--radius-sm); padding:9px 12px;
+      font-size:13px; font-family:var(--font-body); color:var(--text-1);
+      outline:none; transition:border-color .2s;
+      width:100%;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--accent); }
+    .field input::placeholder, .field textarea::placeholder { color:var(--text-3); }
+    .field textarea { resize:vertical; min-height:80px; }
+    .field select option { background:var(--surface-2); }
+
+    /* Salary hint */
+    .salary-hint { font-size:11px; color:var(--text-3); margin-top:4px; }
+    .gross-display {
+      background:var(--accent-soft); border:1px solid rgba(108,99,255,0.2);
+      border-radius:var(--radius-sm); padding:10px 14px;
+      font-size:14px; font-weight:600; color:var(--accent);
+      text-align:center;
+    }
+    .gross-label { font-size:11px; color:var(--text-3); text-align:center; margin-top:4px; }
+
+    /* Photo preview */
+    .photo-wrap { display:flex; align-items:center; gap:16px; }
+    .photo-preview { width:64px; height:64px; border-radius:50%; background:var(--accent-soft); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-size:24px; overflow:hidden; flex-shrink:0; }
+    .photo-preview img { width:100%; height:100%; object-fit:cover; }
+
+    /* AI benchmark */
+    .ai-hint {
+      background:var(--surface-2); border:1px solid rgba(108,99,255,0.2);
+      border-radius:var(--radius-sm); padding:12px 14px;
+      font-size:12px; color:var(--text-2); line-height:1.6;
+      display:flex; gap:8px; align-items:flex-start;
+    }
+    .ai-hint-icon { font-size:14px; flex-shrink:0; margin-top:1px; }
+
+    /* Buttons */
+    .form-actions { display:flex; gap:10px; align-items:center; padding-top:4px; }
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:10px 20px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; font-family:var(--font-body); cursor:pointer; text-decoration:none; border:none; transition:opacity .15s; }
+    .btn-primary { background:var(--accent); color:#fff; box-shadow:0 2px 12px var(--accent-glow); }
+    .btn-primary:hover { opacity:.88; }
+    .btn-ghost { background:var(--surface-2); color:var(--text-2); border:1px solid var(--border); }
+    .btn-ghost:hover { color:var(--text-1); }
+
+    @media(max-width:768px){ .sidebar{display:none;} .main{margin-left:0;} .section-body,.section-body.three{grid-template-columns:1fr;} .field.span2,.field.span3{grid-column:auto;} }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">V</div>
+      <span class="brand-name">Vaetan</span>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Main</span>
+      <a href="{{ url_for('dashboard.index') }}"  class="nav-link"><span class="nav-icon">⊞</span> Dashboard</a>
+      <a href="{{ url_for('employees.index') }}"  class="nav-link active"><span class="nav-icon">👥</span> Employees</a>
+      <a href="{{ url_for('attendance.index') }}" class="nav-link"><span class="nav-icon">📅</span> Attendance</a>
+      <span class="nav-section-label">Finance</span>
+      <a href="{{ url_for('payroll.index') }}"    class="nav-link"><span class="nav-icon">₹</span> Payroll</a>
+      <a href="{{ url_for('payslips.index') }}"   class="nav-link"><span class="nav-icon">📄</span> Payslips</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-avatar">{{ current_user.full_name[0].upper() }}</div>
+        <div class="user-info">
+          <div class="user-name">{{ current_user.full_name }}</div>
+          <div class="user-role">{{ current_user.role }}</div>
+        </div>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="logout-btn">⇤ Sign out</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1>{% if emp %}Edit Employee{% else %}Add New Employee{% endif %}</h1>
+        <p>{% if emp %}Updating {{ emp.full_name }} · {{ emp.employee_code }}{% else %}Fill in the details below to onboard a new team member{% endif %}</p>
+      </div>
+      <a href="{{ url_for('employees.index') }}" class="btn btn-ghost" style="text-decoration:none">← Back</a>
+    </header>
+
+    <div class="content">
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flash-list">
+            {% for cat, msg in messages %}
+              <li class="flash {{ cat }}">✕ {{ msg }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+
+      <form method="POST" enctype="multipart/form-data"
+            action="{% if emp %}{{ url_for('employees.edit', emp_id=emp.id) }}{% else %}{{ url_for('employees.add') }}{% endif %}">
+
+        <!-- Personal details -->
+        <div class="form-section">
+          <div class="section-header">
+            <span class="section-icon">👤</span>
+            <span class="section-title">Personal Details</span>
+          </div>
+          <div class="section-body">
+            <div class="field">
+              <label>Full Name <span>*</span></label>
+              <input type="text" name="full_name" placeholder="e.g. Priya Sharma"
+                value="{{ emp.full_name if emp else form.get('full_name','') }}" required>
+            </div>
+            <div class="field">
+              <label>Email Address <span>*</span></label>
+              <input type="email" name="email" placeholder="priya@company.com"
+                value="{{ emp.email if emp else form.get('email','') }}" required>
+            </div>
+            <div class="field">
+              <label>Phone Number</label>
+              <input type="tel" name="phone" placeholder="+91 98765 43210"
+                value="{{ emp.phone if emp else form.get('phone','') }}">
+            </div>
+            <div class="field">
+              <label>Date of Birth</label>
+              <input type="date" name="date_of_birth"
+                value="{{ emp.date_of_birth.isoformat() if emp and emp.date_of_birth else form.get('date_of_birth','') }}">
+            </div>
+            <div class="field">
+              <label>Gender</label>
+              <select name="gender">
+                <option value="">Select gender</option>
+                <option value="male"   {% if emp and emp.gender == 'male'   %}selected{% endif %}>Male</option>
+                <option value="female" {% if emp and emp.gender == 'female' %}selected{% endif %}>Female</option>
+                <option value="other"  {% if emp and emp.gender == 'other'  %}selected{% endif %}>Other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Profile Photo</label>
+              <div class="photo-wrap">
+                <div class="photo-preview" id="photoPreview">
+                  {% if emp and emp.photo_path %}
+                    <img src="{{ url_for('static', filename=emp.photo_path) }}" id="photoImg">
+                  {% else %}
+                    <span id="photoImg">📷</span>
+                  {% endif %}
+                </div>
+                <input type="file" name="photo" accept="image/*" onchange="previewPhoto(this)">
+              </div>
+            </div>
+            <div class="field span2">
+              <label>Address</label>
+              <textarea name="address" placeholder="Full address…">{{ emp.address if emp else form.get('address','') }}</textarea>
+            </div>
+            {% if not emp %}
+            <div class="field">
+              <label>Login Password</label>
+              <input type="text" name="password" value="vaetan@123" placeholder="Default: vaetan@123">
+              <div class="salary-hint">Employee can change this after first login.</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Job details -->
+        <div class="form-section">
+          <div class="section-header">
+            <span class="section-icon">💼</span>
+            <span class="section-title">Job Details</span>
+          </div>
+          <div class="section-body">
+            <div class="field">
+              <label>Department <span>*</span></label>
+              <input type="text" name="department" placeholder="e.g. Engineering"
+                list="dept-list"
+                value="{{ emp.department if emp else form.get('department','') }}" required>
+              <datalist id="dept-list">
+                <option value="Engineering"><option value="Human Resources">
+                <option value="Finance"><option value="Marketing">
+                <option value="Operations"><option value="Sales"><option value="Design">
+              </datalist>
+            </div>
+            <div class="field">
+              <label>Designation <span>*</span></label>
+              <input type="text" name="designation" placeholder="e.g. Senior Developer"
+                value="{{ emp.designation if emp else form.get('designation','') }}" required>
+            </div>
+            <div class="field">
+              <label>Employment Type</label>
+              <select name="employment_type">
+                <option value="full_time" {% if not emp or emp.employment_type == 'full_time' %}selected{% endif %}>Full Time</option>
+                <option value="part_time" {% if emp and emp.employment_type == 'part_time' %}selected{% endif %}>Part Time</option>
+                <option value="contract"  {% if emp and emp.employment_type == 'contract'  %}selected{% endif %}>Contract</option>
+                <option value="intern"    {% if emp and emp.employment_type == 'intern'    %}selected{% endif %}>Intern</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Join Date</label>
+              <input type="date" name="join_date"
+                value="{{ emp.join_date.isoformat() if emp else form.get('join_date','') }}">
+            </div>
+            {% if emp %}
+            <div class="field">
+              <label>Status</label>
+              <select name="status">
+                <option value="active"    {% if emp.status == 'active'    %}selected{% endif %}>Active</option>
+                <option value="on_leave"  {% if emp.status == 'on_leave'  %}selected{% endif %}>On Leave</option>
+                <option value="inactive"  {% if emp.status == 'inactive'  %}selected{% endif %}>Inactive</option>
+                <option value="terminated"{% if emp.status == 'terminated'%}selected{% endif %}>Terminated</option>
+              </select>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Salary structure -->
+        <div class="form-section">
+          <div class="section-header">
+            <span class="section-icon">₹</span>
+            <span class="section-title">Salary Structure</span>
+            <span class="section-sub">Monthly amounts in ₹</span>
+          </div>
+          <div class="section-body three">
+            <div class="field">
+              <label>Basic Salary <span>*</span></label>
+              <input type="number" name="basic_salary" id="basic_salary" placeholder="0" min="0" step="100"
+                value="{{ emp.basic_salary|int if emp else form.get('basic_salary','') }}"
+                oninput="updateGross()">
+              <div class="salary-hint">PF = 12% of basic</div>
+            </div>
+            <div class="field">
+              <label>HRA (House Rent Allowance)</label>
+              <input type="number" name="hra" id="hra" placeholder="0" min="0" step="100"
+                value="{{ emp.hra|int if emp else form.get('hra','') }}"
+                oninput="updateGross()">
+              <div class="salary-hint">Usually 40–50% of basic</div>
+            </div>
+            <div class="field">
+              <label>DA (Dearness Allowance)</label>
+              <input type="number" name="da" id="da" placeholder="0" min="0" step="100"
+                value="{{ emp.da|int if emp else form.get('da','') }}"
+                oninput="updateGross()">
+            </div>
+            <div class="field">
+              <label>Special Allowance</label>
+              <input type="number" name="special_allowance" id="special_allowance" placeholder="0" min="0" step="100"
+                value="{{ emp.special_allowance|int if emp else form.get('special_allowance','') }}"
+                oninput="updateGross()">
+            </div>
+            <div class="field">
+              <label>Travel Allowance</label>
+              <input type="number" name="travel_allowance" id="travel_allowance" placeholder="0" min="0" step="100"
+                value="{{ emp.travel_allowance|int if emp else form.get('travel_allowance','') }}"
+                oninput="updateGross()">
+            </div>
+            <div class="field">
+              <div class="gross-display" id="grossDisplay">₹0</div>
+              <div class="gross-label">Gross Monthly Salary</div>
+            </div>
+          </div>
+
+          <!-- AI salary suggestion -->
+          <div style="padding:0 20px 20px">
+            <div class="ai-hint">
+              <span class="ai-hint-icon">🤖</span>
+              <div>
+                <strong style="color:var(--accent);font-size:12px">AI Salary Benchmark</strong><br>
+                For a <strong id="ai-designation">{{ emp.designation if emp else 'this role' }}</strong>
+                in <strong id="ai-dept">{{ emp.department if emp else 'your department' }}</strong>,
+                the typical gross salary range in India is
+                <strong style="color:var(--text-1)">₹35,000 – ₹80,000/month</strong>
+                depending on experience.
+                ESI applies if gross ≤ ₹21,000. PF is always 12% of basic.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bank details -->
+        <div class="form-section">
+          <div class="section-header">
+            <span class="section-icon">🏦</span>
+            <span class="section-title">Bank & Tax Details</span>
+            <span class="section-sub">Used for payslip generation</span>
+          </div>
+          <div class="section-body">
+            <div class="field">
+              <label>Bank Name</label>
+              <input type="text" name="bank_name" placeholder="e.g. SBI, HDFC"
+                value="{{ emp.bank_name if emp else '' }}">
+            </div>
+            <div class="field">
+              <label>Account Number</label>
+              <input type="text" name="bank_account_no" placeholder="Account number"
+                value="{{ emp.bank_account_no if emp else '' }}">
+            </div>
+            <div class="field">
+              <label>IFSC Code</label>
+              <input type="text" name="ifsc_code" placeholder="e.g. SBIN0001234"
+                value="{{ emp.ifsc_code if emp else '' }}">
+            </div>
+            <div class="field">
+              <label>PAN Number</label>
+              <input type="text" name="pan_number" placeholder="e.g. ABCDE1234F"
+                value="{{ emp.pan_number if emp else '' }}">
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">
+            {% if emp %}💾 Save Changes{% else %}✓ Add Employee{% endif %}
+          </button>
+          <a href="{{ url_for('employees.index') }}" class="btn btn-ghost">Cancel</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function updateGross() {
+  const fields = ['basic_salary','hra','da','special_allowance','travel_allowance'];
+  const total  = fields.reduce((sum, id) => sum + (parseFloat(document.getElementById(id).value) || 0), 0);
+  document.getElementById('grossDisplay').textContent = '₹' + total.toLocaleString('en-IN');
+  // update AI hint
+  const des  = document.querySelector('[name=designation]').value || 'this role';
+  const dept = document.querySelector('[name=department]').value  || 'your department';
+  document.getElementById('ai-designation').textContent = des;
+  document.getElementById('ai-dept').textContent = dept;
+}
+
+function previewPhoto(input) {
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const preview = document.getElementById('photoPreview');
+      preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+// Init gross on page load
+updateGross();
+</script>
+</body>
+</html>

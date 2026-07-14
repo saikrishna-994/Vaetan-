@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Attendance — Vaetan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0F1117; --surface:#181C27; --surface-2:#1E2333;
+      --border:rgba(255,255,255,0.07); --accent:#6C63FF;
+      --accent-soft:rgba(108,99,255,0.10); --accent-glow:rgba(108,99,255,0.25);
+      --text-1:#F0F2F8; --text-2:#8B90A7; --text-3:#555A72;
+      --green:#22C55E; --red:#F43F5E; --amber:#F59E0B; --blue:#3B82F6; --purple:#A78BFA;
+      --sidebar-w:240px; --radius:14px; --radius-sm:8px;
+      --font-display:'Sora',sans-serif; --font-body:'Inter',sans-serif;
+    }
+    html,body { height:100%; background:var(--bg); font-family:var(--font-body); color:var(--text-1); -webkit-font-smoothing:antialiased; }
+    .layout { display:flex; min-height:100vh; }
+
+    /* Sidebar */
+    .sidebar { width:var(--sidebar-w); background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:100; }
+    .sidebar-brand { display:flex; align-items:center; gap:10px; padding:24px 20px; border-bottom:1px solid var(--border); }
+    .brand-mark { width:34px; height:34px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:15px; color:#fff; flex-shrink:0; }
+    .brand-name { font-family:var(--font-display); font-size:18px; font-weight:700; }
+    .sidebar-nav { flex:1; padding:16px 12px; display:flex; flex-direction:column; gap:2px; }
+    .nav-section-label { font-size:10px; font-weight:500; color:var(--text-3); letter-spacing:.08em; text-transform:uppercase; padding:12px 8px 6px; }
+    .nav-link { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); text-decoration:none; color:var(--text-2); font-size:13px; font-weight:500; transition:background .15s,color .15s; }
+    .nav-link:hover { background:var(--surface-2); color:var(--text-1); }
+    .nav-link.active { background:var(--accent-soft); color:var(--accent); }
+    .nav-icon { font-size:15px; width:20px; text-align:center; }
+    .sidebar-footer { padding:16px 12px; border-top:1px solid var(--border); }
+    .user-pill { display:flex; align-items:center; gap:10px; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius-sm); margin-bottom:8px; }
+    .user-avatar { width:30px; height:30px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#fff; }
+    .user-info { flex:1; min-width:0; }
+    .user-name { font-size:12px; font-weight:500; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .user-role { font-size:10px; color:var(--text-3); }
+    .logout-btn { display:flex; align-items:center; gap:8px; width:100%; padding:8px 12px; background:none; border:none; color:var(--text-3); font-size:12px; font-family:var(--font-body); cursor:pointer; border-radius:var(--radius-sm); text-decoration:none; }
+    .logout-btn:hover { color:var(--red); }
+
+    /* Main */
+    .main { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; }
+    .topbar { height:60px; background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 28px; position:sticky; top:0; z-index:50; }
+    .topbar-left h1 { font-size:16px; font-weight:600; color:var(--text-1); }
+    .topbar-left p  { font-size:12px; color:var(--text-3); margin-top:1px; }
+    .content { padding:28px; }
+
+    /* Flash */
+    .flash-list { list-style:none; margin-bottom:20px; display:flex; flex-direction:column; gap:8px; }
+    .flash { padding:10px 14px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px; }
+    .flash.success { background:rgba(34,197,94,0.12); color:var(--green); border:1px solid rgba(34,197,94,0.2); }
+
+    /* Date picker bar */
+    .date-bar { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+    .date-nav-btn {
+      width:34px; height:34px; border-radius:var(--radius-sm);
+      background:var(--surface); border:1px solid var(--border);
+      color:var(--text-2); display:flex; align-items:center; justify-content:center;
+      cursor:pointer; text-decoration:none; font-size:14px;
+      transition:background .12s,color .12s;
+    }
+    .date-nav-btn:hover { background:var(--surface-2); color:var(--text-1); }
+    .date-input {
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+      padding:8px 14px; font-size:13px; font-family:var(--font-body); color:var(--text-1);
+      outline:none; cursor:pointer;
+    }
+    .date-input:focus { border-color:var(--accent); }
+    .date-label { font-size:14px; font-weight:600; color:var(--text-1); }
+    .today-pill { font-size:11px; background:var(--accent-soft); color:var(--accent); padding:3px 10px; border-radius:20px; font-weight:500; }
+
+    /* Stats row */
+    .stats-row { display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+    .stat-pill {
+      flex:1; min-width:120px;
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+      padding:12px 16px; display:flex; align-items:center; gap:10px;
+    }
+    .stat-pill-icon { font-size:18px; }
+    .stat-pill-num  { font-family:var(--font-display); font-size:20px; font-weight:700; color:var(--text-1); line-height:1; }
+    .stat-pill-label{ font-size:11px; color:var(--text-3); margin-top:2px; }
+
+    /* Table */
+    .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    table { width:100%; border-collapse:collapse; }
+    thead th { padding:11px 14px; text-align:left; font-size:11px; font-weight:500; color:var(--text-3); letter-spacing:.05em; text-transform:uppercase; border-bottom:1px solid var(--border); background:var(--surface-2); white-space:nowrap; }
+    tbody tr { border-bottom:1px solid var(--border); transition:background .12s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:var(--surface-2); }
+    tbody td { padding:10px 14px; font-size:13px; color:var(--text-1); vertical-align:middle; }
+
+    .emp-cell { display:flex; align-items:center; gap:10px; }
+    .emp-avatar-sm { width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:var(--accent); background:var(--accent-soft); border:1px solid var(--border); overflow:hidden; }
+    .emp-avatar-sm img { width:100%; height:100%; object-fit:cover; }
+    .emp-cell-name { font-weight:500; font-size:13px; }
+    .emp-cell-dept { font-size:11px; color:var(--text-3); }
+
+    /* Status pills (radio-style buttons) */
+    .status-group { display:flex; gap:4px; flex-wrap:wrap; }
+    .status-opt { display:none; }
+    .status-label {
+      font-size:11px; font-weight:500; padding:5px 10px; border-radius:6px;
+      border:1px solid var(--border); background:var(--surface-2); color:var(--text-3);
+      cursor:pointer; transition:all .12s; white-space:nowrap;
+    }
+    .status-opt:checked + .status-label.present  { background:rgba(34,197,94,0.18);  color:var(--green); border-color:var(--green); }
+    .status-opt:checked + .status-label.absent   { background:rgba(244,63,94,0.18);  color:var(--red);   border-color:var(--red); }
+    .status-opt:checked + .status-label.half_day { background:rgba(245,158,11,0.18); color:var(--amber); border-color:var(--amber); }
+    .status-opt:checked + .status-label.on_leave { background:rgba(59,130,246,0.18); color:var(--blue);  border-color:var(--blue); }
+    .status-label:hover { border-color:var(--text-2); }
+
+    /* Time inputs */
+    .time-inputs { display:flex; gap:6px; align-items:center; }
+    .time-inputs input[type=time] {
+      background:var(--surface-2); border:1px solid var(--border); border-radius:6px;
+      padding:5px 8px; font-size:11px; color:var(--text-1); font-family:var(--font-body);
+      width:90px; outline:none;
+    }
+    .time-inputs input[type=time]:focus { border-color:var(--accent); }
+    .time-sep { color:var(--text-3); font-size:11px; }
+
+    .leave-select {
+      background:var(--surface-2); border:1px solid var(--border); border-radius:6px;
+      padding:5px 8px; font-size:11px; color:var(--text-2); outline:none;
+    }
+
+    /* Calendar link */
+    .cal-link {
+      width:30px; height:30px; border-radius:6px; border:1px solid var(--border);
+      background:var(--surface-2); color:var(--text-2); display:flex; align-items:center; justify-content:center;
+      font-size:13px; cursor:pointer; text-decoration:none; transition:background .12s,color .12s;
+    }
+    .cal-link:hover { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+
+    .late-tag { font-size:9px; background:rgba(244,63,94,0.15); color:var(--red); padding:1px 6px; border-radius:10px; margin-left:4px; }
+
+    /* Save button */
+    .save-bar { position:sticky; bottom:0; background:var(--surface); border-top:1px solid var(--border); padding:14px 20px; display:flex; justify-content:flex-end; gap:10px; }
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 20px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; font-family:var(--font-body); cursor:pointer; text-decoration:none; border:none; transition:opacity .15s; }
+    .btn-primary { background:var(--accent); color:#fff; box-shadow:0 2px 12px var(--accent-glow); }
+    .btn-primary:hover { opacity:.88; }
+    .btn-ghost { background:var(--surface-2); color:var(--text-2); border:1px solid var(--border); }
+
+    .empty { padding:60px 20px; text-align:center; color:var(--text-3); }
+
+    @media(max-width:768px){ .sidebar{display:none;} .main{margin-left:0;} }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">V</div>
+      <span class="brand-name">Vaetan</span>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Main</span>
+      <a href="{{ url_for('dashboard.index') }}"  class="nav-link"><span class="nav-icon">⊞</span> Dashboard</a>
+      <a href="{{ url_for('employees.index') }}"  class="nav-link"><span class="nav-icon">👥</span> Employees</a>
+      <a href="{{ url_for('attendance.index') }}" class="nav-link active"><span class="nav-icon">📅</span> Attendance</a>
+      <span class="nav-section-label">Finance</span>
+      <a href="{{ url_for('payroll.index') }}"    class="nav-link"><span class="nav-icon">₹</span> Payroll</a>
+      <a href="{{ url_for('payslips.index') }}"   class="nav-link"><span class="nav-icon">📄</span> Payslips</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-avatar">{{ current_user.full_name[0].upper() }}</div>
+        <div class="user-info">
+          <div class="user-name">{{ current_user.full_name }}</div>
+          <div class="user-role">{{ current_user.role }}</div>
+        </div>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="logout-btn">⇤ Sign out</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1>Attendance</h1>
+        <p>Mark daily attendance for your team</p>
+      </div>
+    </header>
+
+    <div class="content">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flash-list">
+            {% for cat, msg in messages %}<li class="flash {{ cat }}">✓ {{ msg }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+
+      <!-- Date navigation -->
+      <div class="date-bar">
+        <a class="date-nav-btn" href="{{ url_for('attendance.index', date=(selected_date - timedelta(days=1)).isoformat()) }}">←</a>
+        <input type="date" class="date-input" id="datePicker" value="{{ selected_date.isoformat() }}"
+               onchange="window.location.href='{{ url_for('attendance.index') }}?date='+this.value">
+        <a class="date-nav-btn" href="{{ url_for('attendance.index', date=(selected_date + timedelta(days=1)).isoformat()) }}">→</a>
+        <span class="date-label">{{ selected_date.strftime('%A, %d %B %Y') }}</span>
+        {% if selected_date == today %}<span class="today-pill">Today</span>{% endif %}
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-pill">
+          <span class="stat-pill-icon">✅</span>
+          <div><div class="stat-pill-num">{{ stats.present }}</div><div class="stat-pill-label">Present</div></div>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill-icon">❌</span>
+          <div><div class="stat-pill-num">{{ stats.absent }}</div><div class="stat-pill-label">Absent</div></div>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill-icon">🌗</span>
+          <div><div class="stat-pill-num">{{ stats.half_day }}</div><div class="stat-pill-label">Half Day</div></div>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill-icon">🏖</span>
+          <div><div class="stat-pill-num">{{ stats.on_leave }}</div><div class="stat-pill-label">On Leave</div></div>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-pill-icon">⏳</span>
+          <div><div class="stat-pill-num">{{ stats.unmarked }}</div><div class="stat-pill-label">Unmarked</div></div>
+        </div>
+      </div>
+
+      {% if employees %}
+      <form method="POST">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Status</th>
+                <th>Check In / Out</th>
+                <th>Calendar</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for emp in employees %}
+              {% set rec = records_by_emp.get(emp.id) %}
+              <tr>
+                <td>
+                  <div class="emp-cell">
+                    <div class="emp-avatar-sm">
+                      {% if emp.photo_path %}
+                        <img src="{{ url_for('static', filename=emp.photo_path) }}">
+                      {% else %}{{ emp.full_name[0].upper() }}{% endif %}
+                    </div>
+                    <div>
+                      <div class="emp-cell-name">{{ emp.full_name }}</div>
+                      <div class="emp-cell-dept">{{ emp.department }} · {{ emp.employee_code }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <div class="status-group">
+                    {% set current_status = rec.status if rec else '' %}
+                    <input type="radio" class="status-opt" id="p_{{emp.id}}" name="status_{{emp.id}}" value="present"  {% if current_status == 'present' %}checked{% endif %} onchange="toggleTime({{emp.id}}, true)">
+                    <label for="p_{{emp.id}}" class="status-label present">Present</label>
+
+                    <input type="radio" class="status-opt" id="a_{{emp.id}}" name="status_{{emp.id}}" value="absent"   {% if current_status == 'absent' %}checked{% endif %} onchange="toggleTime({{emp.id}}, false)">
+                    <label for="a_{{emp.id}}" class="status-label absent">Absent</label>
+
+                    <input type="radio" class="status-opt" id="h_{{emp.id}}" name="status_{{emp.id}}" value="half_day" {% if current_status == 'half_day' %}checked{% endif %} onchange="toggleTime({{emp.id}}, true)">
+                    <label for="h_{{emp.id}}" class="status-label half_day">Half Day</label>
+
+                    <input type="radio" class="status-opt" id="l_{{emp.id}}" name="status_{{emp.id}}" value="on_leave" {% if current_status == 'on_leave' %}checked{% endif %} onchange="toggleTime({{emp.id}}, false)">
+                    <label for="l_{{emp.id}}" class="status-label on_leave">Leave</label>
+
+                    {% if current_status == 'on_leave' %}
+                      <select class="leave-select" name="leave_type_{{emp.id}}" style="margin-left:6px">
+                        <option value="casual" {% if rec and rec.leave_type=='casual' %}selected{% endif %}>Casual</option>
+                        <option value="sick"   {% if rec and rec.leave_type=='sick'   %}selected{% endif %}>Sick</option>
+                        <option value="earned" {% if rec and rec.leave_type=='earned' %}selected{% endif %}>Earned</option>
+                        <option value="unpaid" {% if rec and rec.leave_type=='unpaid' %}selected{% endif %}>Unpaid</option>
+                      </select>
+                    {% endif %}
+                  </div>
+                </td>
+                <td>
+                  <div class="time-inputs" id="time_{{emp.id}}" style="{% if current_status not in ['present','half_day'] %}visibility:hidden{% endif %}">
+                    <input type="time" name="checkin_{{emp.id}}" value="{{ rec.check_in.strftime('%H:%M') if rec and rec.check_in else '09:00' }}">
+                    <span class="time-sep">–</span>
+                    <input type="time" name="checkout_{{emp.id}}" value="{{ rec.check_out.strftime('%H:%M') if rec and rec.check_out else '18:00' }}">
+                    {% if rec and rec.is_late %}<span class="late-tag">Late</span>{% endif %}
+                  </div>
+                </td>
+                <td>
+                  <a class="cal-link" href="{{ url_for('attendance.employee_calendar', emp_id=emp.id) }}" title="View monthly calendar">📅</a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="save-bar" style="border-radius:0 0 var(--radius) var(--radius); margin-top:-1px; border:1px solid var(--border); border-top:none;">
+          <button type="button" class="btn btn-ghost" onclick="markAll('present')">Mark all Present</button>
+          <button type="submit" class="btn btn-primary">💾 Save Attendance</button>
+        </div>
+      </form>
+      {% else %}
+      <div class="empty">
+        <div style="font-size:40px;margin-bottom:12px">📅</div>
+        <div style="font-size:15px;font-weight:500;color:var(--text-2);margin-bottom:6px">No active employees</div>
+        <div style="font-size:13px">Add employees first to start tracking attendance.</div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleTime(empId, show) {
+  const el = document.getElementById('time_' + empId);
+  el.style.visibility = show ? 'visible' : 'hidden';
+}
+function markAll(status) {
+  document.querySelectorAll(`input[type=radio][value="${status}"]`).forEach(input => {
+    input.checked = true;
+    const empId = input.name.split('_')[1];
+    toggleTime(empId, status === 'present' || status === 'half_day');
+  });
+}
+</script>
+</body>
+</html>

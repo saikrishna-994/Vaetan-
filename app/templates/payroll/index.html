@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payroll — Vaetan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0F1117; --surface:#181C27; --surface-2:#1E2333;
+      --border:rgba(255,255,255,0.07); --accent:#6C63FF;
+      --accent-soft:rgba(108,99,255,0.10); --accent-glow:rgba(108,99,255,0.25);
+      --text-1:#F0F2F8; --text-2:#8B90A7; --text-3:#555A72;
+      --green:#22C55E; --red:#F43F5E; --amber:#F59E0B; --blue:#3B82F6;
+      --sidebar-w:240px; --radius:14px; --radius-sm:8px;
+      --font-display:'Sora',sans-serif; --font-body:'Inter',sans-serif;
+    }
+    html,body { height:100%; background:var(--bg); font-family:var(--font-body); color:var(--text-1); -webkit-font-smoothing:antialiased; }
+    .layout { display:flex; min-height:100vh; }
+
+    .sidebar { width:var(--sidebar-w); background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:100; }
+    .sidebar-brand { display:flex; align-items:center; gap:10px; padding:24px 20px; border-bottom:1px solid var(--border); }
+    .brand-mark { width:34px; height:34px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:15px; color:#fff; }
+    .brand-name { font-family:var(--font-display); font-size:18px; font-weight:700; }
+    .sidebar-nav { flex:1; padding:16px 12px; display:flex; flex-direction:column; gap:2px; }
+    .nav-section-label { font-size:10px; font-weight:500; color:var(--text-3); letter-spacing:.08em; text-transform:uppercase; padding:12px 8px 6px; }
+    .nav-link { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); text-decoration:none; color:var(--text-2); font-size:13px; font-weight:500; transition:background .15s,color .15s; }
+    .nav-link:hover { background:var(--surface-2); color:var(--text-1); }
+    .nav-link.active { background:var(--accent-soft); color:var(--accent); }
+    .nav-icon { font-size:15px; width:20px; text-align:center; }
+    .sidebar-footer { padding:16px 12px; border-top:1px solid var(--border); }
+    .user-pill { display:flex; align-items:center; gap:10px; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius-sm); margin-bottom:8px; }
+    .user-avatar { width:30px; height:30px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#fff; }
+    .user-info { flex:1; min-width:0; }
+    .user-name { font-size:12px; font-weight:500; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .user-role { font-size:10px; color:var(--text-3); }
+    .logout-btn { display:flex; align-items:center; gap:8px; width:100%; padding:8px 12px; background:none; border:none; color:var(--text-3); font-size:12px; cursor:pointer; border-radius:var(--radius-sm); text-decoration:none; }
+    .logout-btn:hover { color:var(--red); }
+
+    .main { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; }
+    .topbar { height:60px; background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 28px; position:sticky; top:0; z-index:50; }
+    .topbar-left h1 { font-size:16px; font-weight:600; }
+    .topbar-left p  { font-size:12px; color:var(--text-3); margin-top:1px; }
+    .content { padding:28px; }
+
+    .flash-list { list-style:none; margin-bottom:20px; display:flex; flex-direction:column; gap:8px; }
+    .flash { padding:10px 14px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px; }
+    .flash.success { background:rgba(34,197,94,0.12); color:var(--green); border:1px solid rgba(34,197,94,0.2); }
+    .flash.danger  { background:rgba(244,63,94,0.12); color:var(--red); border:1px solid rgba(244,63,94,0.2); }
+    .flash.info    { background:rgba(59,130,246,0.12); color:var(--blue); border:1px solid rgba(59,130,246,0.2); }
+
+    /* Month selector */
+    .month-bar { display:flex; align-items:center; gap:12px; margin-bottom:20px; flex-wrap:wrap; }
+    .month-nav-btn { width:34px; height:34px; border-radius:var(--radius-sm); background:var(--surface); border:1px solid var(--border); color:var(--text-2); display:flex; align-items:center; justify-content:center; cursor:pointer; text-decoration:none; font-size:14px; }
+    .month-nav-btn:hover { background:var(--surface-2); color:var(--text-1); }
+    .month-label { font-size:16px; font-weight:600; color:var(--text-1); font-family:var(--font-display); }
+
+    /* Summary cards */
+    .summary-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:24px; }
+    .summary-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+    .summary-icon { font-size:16px; margin-bottom:8px; }
+    .summary-val { font-family:var(--font-display); font-size:22px; font-weight:700; color:var(--text-1); }
+    .summary-label { font-size:11px; color:var(--text-3); margin-top:2px; }
+    .summary-card.warn { border-color:rgba(244,63,94,0.3); }
+    .summary-card.warn .summary-val { color:var(--red); }
+
+    /* Buttons */
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; font-family:var(--font-body); cursor:pointer; text-decoration:none; border:none; transition:opacity .15s,transform .1s; }
+    .btn:hover { opacity:.88; }
+    .btn-primary { background:var(--accent); color:#fff; box-shadow:0 2px 12px var(--accent-glow); }
+    .btn-ghost { background:var(--surface); color:var(--text-2); border:1px solid var(--border); }
+    .btn-success { background:var(--green); color:#fff; }
+    .btn-sm { padding:5px 12px; font-size:11px; }
+
+    /* Pending banner */
+    .pending-banner {
+      background:var(--surface); border:1px solid rgba(245,158,11,0.3); border-radius:var(--radius);
+      padding:16px 20px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    }
+    .pending-text { font-size:13px; color:var(--text-2); }
+    .pending-text strong { color:var(--amber); }
+
+    /* Table */
+    .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    table { width:100%; border-collapse:collapse; }
+    thead th { padding:11px 14px; text-align:left; font-size:11px; font-weight:500; color:var(--text-3); letter-spacing:.05em; text-transform:uppercase; border-bottom:1px solid var(--border); background:var(--surface-2); white-space:nowrap; }
+    tbody tr { border-bottom:1px solid var(--border); transition:background .12s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:var(--surface-2); }
+    tbody td { padding:11px 14px; font-size:13px; color:var(--text-1); vertical-align:middle; }
+    tbody tr.anomaly-row { background:rgba(244,63,94,0.04); }
+
+    .emp-cell { display:flex; align-items:center; gap:10px; }
+    .emp-avatar-sm { width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:var(--accent); background:var(--accent-soft); border:1px solid var(--border); }
+    .emp-cell-name { font-weight:500; font-size:13px; }
+    .emp-cell-code { font-size:11px; color:var(--text-3); }
+
+    .num { font-family:'Courier New',monospace; font-size:12px; }
+    .num.positive { color:var(--green); }
+    .num.negative { color:var(--red); }
+    .num.net { font-weight:600; color:var(--text-1); font-size:13px; }
+
+    .badge { display:inline-flex; align-items:center; font-size:10px; font-weight:600; padding:3px 9px; border-radius:20px; white-space:nowrap; }
+    .badge-draft    { background:rgba(245,158,11,0.12); color:var(--amber); }
+    .badge-approved { background:rgba(34,197,94,0.12);  color:var(--green); }
+    .badge-locked   { background:rgba(108,99,255,0.12); color:var(--accent); }
+    .anomaly-badge {
+      display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:600;
+      background:rgba(244,63,94,0.15); color:var(--red); padding:3px 9px; border-radius:20px;
+      cursor:help;
+    }
+
+    .actions { display:flex; gap:6px; }
+    .action-btn { padding:5px 10px; border-radius:6px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-2); font-size:11px; cursor:pointer; transition:all .12s; }
+    .action-btn:hover { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+
+    .empty { padding:60px 20px; text-align:center; color:var(--text-3); }
+
+    @media(max-width:768px){ .sidebar{display:none;} .main{margin-left:0;} }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-mark">V</div><span class="brand-name">Vaetan</span></div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Main</span>
+      <a href="{{ url_for('dashboard.index') }}"  class="nav-link"><span class="nav-icon">⊞</span> Dashboard</a>
+      <a href="{{ url_for('employees.index') }}"  class="nav-link"><span class="nav-icon">👥</span> Employees</a>
+      <a href="{{ url_for('attendance.index') }}" class="nav-link"><span class="nav-icon">📅</span> Attendance</a>
+      <span class="nav-section-label">Finance</span>
+      <a href="{{ url_for('payroll.index') }}"    class="nav-link active"><span class="nav-icon">₹</span> Payroll</a>
+      <a href="{{ url_for('payslips.index') }}"   class="nav-link"><span class="nav-icon">📄</span> Payslips</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-avatar">{{ current_user.full_name[0].upper() }}</div>
+        <div class="user-info"><div class="user-name">{{ current_user.full_name }}</div><div class="user-role">{{ current_user.role }}</div></div>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="logout-btn">⇤ Sign out</a>
+    </div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1>Payroll</h1>
+        <p>Run, review, and approve monthly payroll</p>
+      </div>
+      <form method="POST" action="{{ url_for('payroll.run') }}">
+        <input type="hidden" name="year"  value="{{ year }}">
+        <input type="hidden" name="month" value="{{ month }}">
+        <button type="submit" class="btn btn-primary">⚡ Run Payroll for {{ month_name }}</button>
+      </form>
+    </header>
+
+    <div class="content">
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flash-list">
+            {% for cat, msg in messages %}<li class="flash {{ cat }}">{% if cat=='success' %}✓{% elif cat=='danger' %}✕{% else %}ℹ{% endif %} {{ msg }}</li>{% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+
+      <!-- Month selector -->
+      <div class="month-bar">
+        {% set pm, py = (12, year-1) if month == 1 else (month-1, year) %}
+        {% set nm, ny = (1, year+1) if month == 12 else (month+1, year) %}
+        <a class="month-nav-btn" href="{{ url_for('payroll.index', year=py, month=pm) }}">←</a>
+        <span class="month-label">{{ month_name }} {{ year }}</span>
+        <a class="month-nav-btn" href="{{ url_for('payroll.index', year=ny, month=nm) }}">→</a>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-icon">💰</div>
+          <div class="summary-val">₹{{ "{:,.0f}".format(totals.gross) }}</div>
+          <div class="summary-label">Gross Pay</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">📉</div>
+          <div class="summary-val">₹{{ "{:,.0f}".format(totals.deductions) }}</div>
+          <div class="summary-label">Total Deductions</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">✅</div>
+          <div class="summary-val">₹{{ "{:,.0f}".format(totals.net) }}</div>
+          <div class="summary-label">Net Payable</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-icon">📝</div>
+          <div class="summary-val">{{ totals.draft }}</div>
+          <div class="summary-label">Pending Approval</div>
+        </div>
+        <div class="summary-card {% if totals.anomalies > 0 %}warn{% endif %}">
+          <div class="summary-icon">⚠️</div>
+          <div class="summary-val">{{ totals.anomalies }}</div>
+          <div class="summary-label">Anomalies Flagged</div>
+        </div>
+      </div>
+
+      <!-- Pending employees banner -->
+      {% if pending_employees %}
+      <div class="pending-banner">
+        <span class="pending-text"><strong>{{ pending_employees|length }} employee(s)</strong> haven't been processed for {{ month_name }} yet. Click "Run Payroll" to generate their records.</span>
+      </div>
+      {% endif %}
+
+      <!-- Approve all banner -->
+      {% if totals.draft > 0 %}
+      <div class="pending-banner" style="border-color:rgba(34,197,94,0.3)">
+        <span class="pending-text"><strong style="color:var(--green)">{{ totals.draft }} draft record(s)</strong> ready for review and approval.</span>
+        <form method="POST" action="{{ url_for('payroll.approve_all') }}">
+          <input type="hidden" name="year" value="{{ year }}">
+          <input type="hidden" name="month" value="{{ month }}">
+          <button type="submit" class="btn btn-success btn-sm">✓ Approve All Drafts</button>
+        </form>
+      </div>
+      {% endif %}
+
+      <!-- Payroll table -->
+      <div class="table-wrap">
+        {% if records %}
+        <table>
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Present / Absent</th>
+              <th>Gross</th>
+              <th>PF</th>
+              <th>ESI</th>
+              <th>TDS</th>
+              <th>Net Pay</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in records %}
+            <tr class="{% if r.anomaly_flag %}anomaly-row{% endif %}">
+              <td>
+                <div class="emp-cell">
+                  <div class="emp-avatar-sm">{{ r.employee.full_name[0].upper() }}</div>
+                  <div>
+                    <div class="emp-cell-name">{{ r.employee.full_name }}</div>
+                    <div class="emp-cell-code">{{ r.employee.employee_code }}</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="num positive">{{ r.days_present }}</span> / <span class="num negative">{{ r.days_absent }}</span></td>
+              <td class="num">₹{{ "{:,.0f}".format(r.gross_pay) }}</td>
+              <td class="num negative">−₹{{ "{:,.0f}".format(r.pf_deduction) }}</td>
+              <td class="num negative">−₹{{ "{:,.0f}".format(r.esi_deduction) }}</td>
+              <td class="num negative">−₹{{ "{:,.0f}".format(r.tds_deduction) }}</td>
+              <td class="num net">₹{{ "{:,.0f}".format(r.net_pay) }}</td>
+              <td>
+                <span class="badge badge-{{ r.status }}">{{ r.status|title }}</span>
+                {% if r.anomaly_flag %}
+                  <span class="anomaly-badge" title="{{ r.anomaly_reason }}">⚠ Flagged</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="actions">
+                  <a href="{{ url_for('payroll.detail', payroll_id=r.id) }}" class="action-btn">View</a>
+                  {% if r.status == 'draft' %}
+                    <form method="POST" action="{{ url_for('payroll.recalculate', payroll_id=r.id) }}" style="display:inline">
+                      <button type="submit" class="action-btn" title="Recalculate from latest attendance">↻</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('payroll.approve', payroll_id=r.id) }}" style="display:inline">
+                      <button type="submit" class="action-btn">Approve</button>
+                    </form>
+                  {% elif r.status == 'approved' %}
+                    <form method="POST" action="{{ url_for('payroll.lock', payroll_id=r.id) }}" style="display:inline">
+                      <button type="submit" class="action-btn">Lock</button>
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty">
+          <div style="font-size:40px;margin-bottom:12px">₹</div>
+          <div style="font-size:15px;font-weight:500;color:var(--text-2);margin-bottom:6px">No payroll run yet for {{ month_name }} {{ year }}</div>
+          <div style="font-size:13px;margin-bottom:20px">Click "Run Payroll" above to calculate salaries based on attendance.</div>
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

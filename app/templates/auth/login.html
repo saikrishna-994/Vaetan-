@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign in — Vaetan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Tokens ──────────────────────────────────────────── */
+    :root {
+      --bg:          #0F1117;
+      --surface:     #181C27;
+      --surface-2:   #1E2333;
+      --border:      rgba(255,255,255,0.07);
+      --accent:      #6C63FF;
+      --accent-glow: rgba(108,99,255,0.35);
+      --accent-soft: rgba(108,99,255,0.12);
+      --text-1:      #F0F2F8;
+      --text-2:      #8B90A7;
+      --text-3:      #555A72;
+      --success:     #22C55E;
+      --danger:      #F43F5E;
+      --warning:     #F59E0B;
+      --info:        #3B82F6;
+      --radius:      14px;
+      --radius-sm:   8px;
+      --font-display: 'Sora', sans-serif;
+      --font-body:    'Inter', sans-serif;
+    }
+
+    /* ── Base ────────────────────────────────────────────── */
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      font-family: var(--font-body);
+      color: var(--text-1);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Layout ──────────────────────────────────────────── */
+    .page {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 480px;
+    }
+
+    /* ── Left panel ─────────────────────────────────────── */
+    .left {
+      position: relative;
+      background: var(--surface);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 80px;
+      overflow: hidden;
+    }
+
+    /* Ambient orb background */
+    .left::before {
+      content: '';
+      position: absolute;
+      width: 600px; height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(108,99,255,0.18) 0%, transparent 70%);
+      top: -100px; left: -100px;
+      pointer-events: none;
+    }
+    .left::after {
+      content: '';
+      position: absolute;
+      width: 400px; height: 400px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(108,99,255,0.10) 0%, transparent 70%);
+      bottom: -80px; right: 40px;
+      pointer-events: none;
+    }
+
+    .left-content { position: relative; z-index: 1; max-width: 480px; }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 64px;
+    }
+    .brand-mark {
+      width: 40px; height: 40px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 18px;
+      color: #fff;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+    .brand-name {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-1);
+      letter-spacing: -0.3px;
+    }
+
+    .left-eyebrow {
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+    }
+    .left-headline {
+      font-family: var(--font-display);
+      font-size: 42px;
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--text-1);
+      margin-bottom: 20px;
+      letter-spacing: -0.5px;
+    }
+    .left-headline span {
+      background: linear-gradient(135deg, #6C63FF, #A78BFA);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .left-sub {
+      font-size: 15px;
+      line-height: 1.7;
+      color: var(--text-2);
+      margin-bottom: 48px;
+      max-width: 380px;
+    }
+
+    /* Stats row */
+    .stats {
+      display: flex;
+      gap: 32px;
+    }
+    .stat-item { display: flex; flex-direction: column; gap: 4px; }
+    .stat-num {
+      font-family: var(--font-display);
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-1);
+      letter-spacing: -0.5px;
+    }
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-3);
+      font-weight: 500;
+    }
+    .stat-divider {
+      width: 1px;
+      background: var(--border);
+      align-self: stretch;
+    }
+
+    /* ── Right panel (login form) ────────────────────────── */
+    .right {
+      background: var(--bg);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 60px 48px;
+    }
+
+    .form-wrap { width: 100%; max-width: 360px; }
+
+    .form-title {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 700;
+      color: var(--text-1);
+      margin-bottom: 6px;
+      letter-spacing: -0.3px;
+    }
+    .form-sub {
+      font-size: 14px;
+      color: var(--text-2);
+      margin-bottom: 36px;
+    }
+
+    /* Flash messages */
+    .flash-list { list-style: none; margin-bottom: 20px; display: flex; flex-direction: column; gap: 8px; }
+    .flash {
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .flash.success { background: rgba(34,197,94,0.12); color: var(--success); border: 1px solid rgba(34,197,94,0.2); }
+    .flash.danger  { background: rgba(244,63,94,0.12);  color: var(--danger);  border: 1px solid rgba(244,63,94,0.2); }
+    .flash.warning { background: rgba(245,158,11,0.12); color: var(--warning); border: 1px solid rgba(245,158,11,0.2); }
+    .flash.info    { background: rgba(59,130,246,0.12); color: var(--info);    border: 1px solid rgba(59,130,246,0.2); }
+
+    /* Form fields */
+    .field { margin-bottom: 18px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-2);
+      margin-bottom: 7px;
+      letter-spacing: 0.03em;
+    }
+
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute;
+      left: 14px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-3);
+      font-size: 15px;
+      pointer-events: none;
+    }
+
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 14px 11px 40px;
+      font-size: 14px;
+      font-family: var(--font-body);
+      color: var(--text-1);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    input[type="email"]::placeholder,
+    input[type="password"]::placeholder { color: var(--text-3); }
+    input[type="email"]:focus,
+    input[type="password"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+
+    /* Password toggle */
+    .toggle-pw {
+      position: absolute;
+      right: 12px; top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-3);
+      cursor: pointer;
+      padding: 4px;
+      font-size: 14px;
+      transition: color 0.15s;
+    }
+    .toggle-pw:hover { color: var(--text-2); }
+
+    /* Remember + forgot row */
+    .row-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .check-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-2);
+      cursor: pointer;
+      user-select: none;
+    }
+    .check-label input[type="checkbox"] {
+      width: 15px; height: 15px;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+    .forgot {
+      font-size: 13px;
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+      transition: opacity 0.15s;
+    }
+    .forgot:hover { opacity: 0.75; }
+
+    /* Submit button */
+    .btn-login {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 600;
+      font-family: var(--font-body);
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px var(--accent-glow);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-login:hover {
+      opacity: 0.92;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 28px var(--accent-glow);
+    }
+    .btn-login:active { transform: translateY(0); }
+    /* Shimmer effect on hover */
+    .btn-login::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      transition: left 0.4s;
+    }
+    .btn-login:hover::after { left: 150%; }
+
+    /* Divider */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 24px 0;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .divider span {
+      font-size: 11px;
+      color: var(--text-3);
+      white-space: nowrap;
+    }
+
+    /* Demo credentials hint */
+    .demo-hint {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--text-2);
+      line-height: 1.6;
+    }
+    .demo-hint strong { color: var(--text-1); font-weight: 500; }
+    .demo-hint code {
+      background: var(--surface-2);
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--accent);
+    }
+
+    /* Footer */
+    .form-footer {
+      margin-top: 32px;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-3);
+    }
+
+    /* ── Responsive ──────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .page { grid-template-columns: 1fr; }
+      .left  { display: none; }
+      .right { padding: 40px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ── Left panel ─────────────────────────────────── -->
+  <div class="left">
+    <div class="left-content">
+
+      <div class="brand">
+        <div class="brand-mark">V</div>
+        <span class="brand-name">Vaetan</span>
+      </div>
+
+      <p class="left-eyebrow">HR &amp; Payroll Platform</p>
+      <h1 class="left-headline">
+        Smart HR.<br>
+        <span>Seamless Pay.</span>
+      </h1>
+      <p class="left-sub">
+        Manage your workforce, track attendance, and run payroll
+        — all in one place. Powered by AI insights that actually matter.
+      </p>
+
+      <div class="stats">
+        <div class="stat-item">
+          <span class="stat-num">7</span>
+          <span class="stat-label">Modules</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-num">6</span>
+          <span class="stat-label">AI Features</span>
+        </div>
+        <div class="stat-divider"></div>
+        <div class="stat-item">
+          <span class="stat-num">∞</span>
+          <span class="stat-label">Employees</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Right panel (form) ─────────────────────────── -->
+  <div class="right">
+    <div class="form-wrap">
+
+      <h2 class="form-title">Welcome back</h2>
+      <p class="form-sub">Sign in to your Vaetan workspace</p>
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flash-list">
+            {% for category, message in messages %}
+              <li class="flash {{ category }}">
+                {% if category == 'success' %}✓{% elif category == 'danger' %}✕{% elif category == 'warning' %}⚠{% else %}ℹ{% endif %}
+                {{ message }}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+
+      <!-- Login form -->
+      <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+
+        <div class="field">
+          <label for="email">Email address</label>
+          <div class="input-wrap">
+            <span class="input-icon">✉</span>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="you@company.com"
+              value="{{ request.form.get('email', '') }}"
+              autocomplete="email"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Enter your password"
+              autocomplete="current-password"
+              required
+            />
+            <button type="button" class="toggle-pw" onclick="togglePassword()" aria-label="Toggle password visibility">
+              <span id="pw-eye">👁</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="row-between">
+          <label class="check-label">
+            <input type="checkbox" name="remember" value="1" />
+            Remember me
+          </label>
+          <a href="#" class="forgot">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn-login">Sign in to Vaetan</button>
+
+      </form>
+
+      <div class="divider"><span>demo credentials</span></div>
+
+      <div class="demo-hint">
+        <strong>Admin account</strong><br>
+        Email: <code>admin@vaetan.com</code><br>
+        Password: <code>admin123</code>
+      </div>
+
+      <div class="form-footer">
+        Vaetan HR &copy; {{ now.year if now else 2025 }} &nbsp;·&nbsp; All rights reserved
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function togglePassword() {
+    const input = document.getElementById('password');
+    const eye   = document.getElementById('pw-eye');
+    if (input.type === 'password') {
+      input.type = 'text';
+      eye.textContent = '🙈';
+    } else {
+      input.type = 'password';
+      eye.textContent = '👁';
+    }
+  }
+
+  // Auto-focus email field
+  document.addEventListener('DOMContentLoaded', () => {
+    const email = document.getElementById('email');
+    if (email && !email.value) email.focus();
+  });
+</script>
+
+</body>
+</html>

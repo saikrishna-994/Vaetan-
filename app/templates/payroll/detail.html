@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payroll Detail — {{ record.employee.full_name }} — Vaetan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0F1117; --surface:#181C27; --surface-2:#1E2333;
+      --border:rgba(255,255,255,0.07); --accent:#6C63FF;
+      --accent-soft:rgba(108,99,255,0.10); --accent-glow:rgba(108,99,255,0.25);
+      --text-1:#F0F2F8; --text-2:#8B90A7; --text-3:#555A72;
+      --green:#22C55E; --red:#F43F5E; --amber:#F59E0B; --blue:#3B82F6;
+      --sidebar-w:240px; --radius:14px; --radius-sm:8px;
+      --font-display:'Sora',sans-serif; --font-body:'Inter',sans-serif;
+    }
+    html,body { height:100%; background:var(--bg); font-family:var(--font-body); color:var(--text-1); -webkit-font-smoothing:antialiased; }
+    .layout { display:flex; min-height:100vh; }
+    .sidebar { width:var(--sidebar-w); background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:100; }
+    .sidebar-brand { display:flex; align-items:center; gap:10px; padding:24px 20px; border-bottom:1px solid var(--border); }
+    .brand-mark { width:34px; height:34px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; color:#fff; }
+    .brand-name { font-family:var(--font-display); font-size:18px; font-weight:700; }
+    .sidebar-nav { flex:1; padding:16px 12px; }
+    .nav-link { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); text-decoration:none; color:var(--text-2); font-size:13px; font-weight:500; }
+    .nav-link.active { background:var(--accent-soft); color:var(--accent); }
+    .nav-icon { font-size:15px; width:20px; text-align:center; }
+    .main { margin-left:var(--sidebar-w); flex:1; }
+    .topbar { height:60px; background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 28px; position:sticky; top:0; }
+    .topbar-left h1 { font-size:16px; font-weight:600; }
+    .topbar-left p  { font-size:12px; color:var(--text-3); margin-top:1px; }
+    .content { padding:28px; max-width:760px; }
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 18px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; cursor:pointer; text-decoration:none; border:none; }
+    .btn-ghost { background:var(--surface); color:var(--text-2); border:1px solid var(--border); }
+
+    /* Payslip-style card */
+    .slip-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; margin-bottom:20px; }
+    .slip-header { padding:24px; background:linear-gradient(135deg, var(--accent-soft), transparent); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:flex-start; }
+    .slip-emp-name { font-size:18px; font-weight:600; color:var(--text-1); }
+    .slip-emp-sub  { font-size:12px; color:var(--text-3); margin-top:3px; }
+    .slip-period   { text-align:right; }
+    .slip-period-label { font-size:11px; color:var(--text-3); }
+    .slip-period-val   { font-size:16px; font-weight:600; color:var(--accent); font-family:var(--font-display); }
+
+    .slip-body { padding:24px; display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    .slip-col-title { font-size:11px; font-weight:600; color:var(--text-3); text-transform:uppercase; letter-spacing:.05em; margin-bottom:12px; }
+    .slip-row { display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px solid var(--border); font-size:13px; }
+    .slip-row:last-child { border-bottom:none; }
+    .slip-row span:first-child { color:var(--text-2); }
+    .slip-row span:last-child  { font-family:'Courier New',monospace; color:var(--text-1); }
+    .slip-row.total { border-top:2px solid var(--border); margin-top:6px; padding-top:10px; font-weight:600; }
+    .slip-row.total span:last-child { color:var(--green); font-size:14px; }
+
+    .net-pay-banner { background:var(--accent-soft); border-top:1px solid var(--border); padding:20px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .net-pay-label { font-size:13px; color:var(--text-2); }
+    .net-pay-amount { font-size:26px; font-weight:700; color:var(--accent); font-family:var(--font-display); }
+
+    /* Attendance breakdown */
+    .att-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:0 24px 24px; }
+    .att-stat { background:var(--surface-2); border-radius:var(--radius-sm); padding:10px; text-align:center; }
+    .att-num { font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--text-1); }
+    .att-label { font-size:10px; color:var(--text-3); margin-top:2px; }
+
+    /* Anomaly warning */
+    .anomaly-box { background:rgba(244,63,94,0.08); border:1px solid rgba(244,63,94,0.25); border-radius:var(--radius-sm); padding:14px 16px; margin-bottom:20px; display:flex; gap:10px; }
+    .anomaly-icon { font-size:18px; }
+    .anomaly-text { font-size:13px; color:var(--text-2); line-height:1.5; }
+    .anomaly-text strong { color:var(--red); }
+
+    .status-badge { display:inline-flex; font-size:11px; font-weight:600; padding:4px 12px; border-radius:20px; }
+    .badge-draft    { background:rgba(245,158,11,0.15); color:var(--amber); }
+    .badge-approved { background:rgba(34,197,94,0.15);  color:var(--green); }
+    .badge-locked   { background:rgba(108,99,255,0.15); color:var(--accent); }
+
+    @media(max-width:768px){ .sidebar{display:none;} .main{margin-left:0;} .slip-body{grid-template-columns:1fr} .att-grid{grid-template-columns:repeat(2,1fr)} }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-mark">V</div><span class="brand-name">Vaetan</span></div>
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('payroll.index') }}" class="nav-link active"><span class="nav-icon">₹</span> Payroll</a>
+    </nav>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1>Payroll Breakdown</h1>
+        <p>{{ record.employee.full_name }} · {{ record.period_label }}</p>
+      </div>
+      <a href="{{ url_for('payroll.index', year=record.year, month=record.month) }}" class="btn btn-ghost">← Back</a>
+    </header>
+
+    <div class="content">
+
+      {% if record.anomaly_flag %}
+      <div class="anomaly-box">
+        <span class="anomaly-icon">⚠️</span>
+        <div class="anomaly-text"><strong>Anomaly detected:</strong> {{ record.anomaly_reason }}</div>
+      </div>
+      {% endif %}
+
+      <div class="slip-card">
+        <div class="slip-header">
+          <div>
+            <div class="slip-emp-name">{{ record.employee.full_name }}</div>
+            <div class="slip-emp-sub">{{ record.employee.designation }} · {{ record.employee.department }} · {{ record.employee.employee_code }}</div>
+          </div>
+          <div class="slip-period">
+            <div class="slip-period-label">Pay Period</div>
+            <div class="slip-period-val">{{ record.period_label }}</div>
+            <span class="status-badge badge-{{ record.status }}" style="margin-top:6px">{{ record.status|title }}</span>
+          </div>
+        </div>
+
+        <div class="slip-body">
+          <div>
+            <div class="slip-col-title">Earnings</div>
+            <div class="slip-row"><span>Basic Salary</span><span>₹{{ "{:,.2f}".format(record.basic_salary) }}</span></div>
+            <div class="slip-row"><span>HRA</span><span>₹{{ "{:,.2f}".format(record.hra) }}</span></div>
+            <div class="slip-row"><span>DA</span><span>₹{{ "{:,.2f}".format(record.da) }}</span></div>
+            <div class="slip-row"><span>Special Allowance</span><span>₹{{ "{:,.2f}".format(record.special_allowance) }}</span></div>
+            <div class="slip-row"><span>Travel Allowance</span><span>₹{{ "{:,.2f}".format(record.travel_allowance) }}</span></div>
+            {% if record.overtime_pay > 0 %}<div class="slip-row"><span>Overtime</span><span>₹{{ "{:,.2f}".format(record.overtime_pay) }}</span></div>{% endif %}
+            {% if record.bonus > 0 %}<div class="slip-row"><span>Bonus</span><span>₹{{ "{:,.2f}".format(record.bonus) }}</span></div>{% endif %}
+            <div class="slip-row total"><span>Gross Pay</span><span>₹{{ "{:,.2f}".format(record.gross_pay) }}</span></div>
+          </div>
+          <div>
+            <div class="slip-col-title">Deductions</div>
+            <div class="slip-row"><span>PF (12% of basic)</span><span>−₹{{ "{:,.2f}".format(record.pf_deduction) }}</span></div>
+            <div class="slip-row"><span>ESI (0.75% of gross)</span><span>−₹{{ "{:,.2f}".format(record.esi_deduction) }}</span></div>
+            <div class="slip-row"><span>TDS</span><span>−₹{{ "{:,.2f}".format(record.tds_deduction) }}</span></div>
+            {% if record.absent_deduction > 0 %}<div class="slip-row"><span>Loss of Pay (absences)</span><span>−₹{{ "{:,.2f}".format(record.absent_deduction) }}</span></div>{% endif %}
+            {% if record.other_deductions > 0 %}<div class="slip-row"><span>Other Deductions</span><span>−₹{{ "{:,.2f}".format(record.other_deductions) }}</span></div>{% endif %}
+            <div class="slip-row total"><span>Total Deductions</span><span style="color:var(--red) !important">−₹{{ "{:,.2f}".format(record.total_deductions) }}</span></div>
+          </div>
+        </div>
+
+        <div class="net-pay-banner">
+          <span class="net-pay-label">Net Pay</span>
+          <span class="net-pay-amount">₹{{ "{:,.2f}".format(record.net_pay) }}</span>
+        </div>
+
+        <div class="att-grid">
+          <div class="att-stat"><div class="att-num">{{ record.working_days }}</div><div class="att-label">Working Days</div></div>
+          <div class="att-stat"><div class="att-num" style="color:var(--green)">{{ record.days_present }}</div><div class="att-label">Present</div></div>
+          <div class="att-stat"><div class="att-num" style="color:var(--red)">{{ record.days_absent }}</div><div class="att-label">Absent</div></div>
+          <div class="att-stat"><div class="att-num" style="color:var(--blue)">{{ record.days_leave }}</div><div class="att-label">On Leave</div></div>
+        </div>
+      </div>
+
+      {% if record.status == 'draft' %}
+      <form method="POST" action="{{ url_for('payroll.approve', payroll_id=record.id) }}">
+        <button type="submit" class="btn" style="background:var(--accent);color:#fff">✓ Approve This Payroll</button>
+      </form>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+</body>
+</html>

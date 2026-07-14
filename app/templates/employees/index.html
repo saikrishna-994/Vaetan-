@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Employees — Vaetan</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Sora:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:#0F1117; --surface:#181C27; --surface-2:#1E2333;
+      --border:rgba(255,255,255,0.07); --accent:#6C63FF;
+      --accent-soft:rgba(108,99,255,0.10); --accent-glow:rgba(108,99,255,0.25);
+      --text-1:#F0F2F8; --text-2:#8B90A7; --text-3:#555A72;
+      --green:#22C55E; --red:#F43F5E; --amber:#F59E0B; --blue:#3B82F6;
+      --sidebar-w:240px; --radius:14px; --radius-sm:8px;
+      --font-display:'Sora',sans-serif; --font-body:'Inter',sans-serif;
+    }
+    html,body { height:100%; background:var(--bg); font-family:var(--font-body); color:var(--text-1); -webkit-font-smoothing:antialiased; }
+    .layout { display:flex; min-height:100vh; }
+
+    /* Sidebar */
+    .sidebar { width:var(--sidebar-w); background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; z-index:100; }
+    .sidebar-brand { display:flex; align-items:center; gap:10px; padding:24px 20px; border-bottom:1px solid var(--border); }
+    .brand-mark { width:34px; height:34px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:15px; color:#fff; box-shadow:0 0 16px var(--accent-glow); flex-shrink:0; }
+    .brand-name { font-family:var(--font-display); font-size:18px; font-weight:700; color:var(--text-1); }
+    .sidebar-nav { flex:1; padding:16px 12px; display:flex; flex-direction:column; gap:2px; }
+    .nav-section-label { font-size:10px; font-weight:500; color:var(--text-3); letter-spacing:.08em; text-transform:uppercase; padding:12px 8px 6px; }
+    .nav-link { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); text-decoration:none; color:var(--text-2); font-size:13px; font-weight:500; transition:background .15s,color .15s; }
+    .nav-link:hover { background:var(--surface-2); color:var(--text-1); }
+    .nav-link.active { background:var(--accent-soft); color:var(--accent); }
+    .nav-icon { font-size:15px; width:20px; text-align:center; }
+    .sidebar-footer { padding:16px 12px; border-top:1px solid var(--border); }
+    .user-pill { display:flex; align-items:center; gap:10px; padding:8px 10px; background:var(--surface-2); border-radius:var(--radius-sm); margin-bottom:8px; }
+    .user-avatar { width:30px; height:30px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:600; color:#fff; flex-shrink:0; }
+    .user-info { flex:1; min-width:0; }
+    .user-name { font-size:12px; font-weight:500; color:var(--text-1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .user-role { font-size:10px; color:var(--text-3); }
+    .logout-btn { display:flex; align-items:center; gap:8px; width:100%; padding:8px 12px; background:none; border:none; color:var(--text-3); font-size:12px; font-family:var(--font-body); cursor:pointer; border-radius:var(--radius-sm); transition:color .15s,background .15s; text-decoration:none; }
+    .logout-btn:hover { color:var(--red); background:rgba(244,63,94,0.08); }
+
+    /* Main */
+    .main { margin-left:var(--sidebar-w); flex:1; display:flex; flex-direction:column; }
+    .topbar { height:60px; background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 28px; position:sticky; top:0; z-index:50; }
+    .topbar-left h1 { font-size:16px; font-weight:600; color:var(--text-1); }
+    .topbar-left p  { font-size:12px; color:var(--text-3); margin-top:1px; }
+    .content { padding:28px; flex:1; }
+
+    /* Flash */
+    .flash-list { list-style:none; margin-bottom:20px; display:flex; flex-direction:column; gap:8px; }
+    .flash { padding:10px 14px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; display:flex; align-items:center; gap:8px; }
+    .flash.success { background:rgba(34,197,94,0.12); color:var(--green); border:1px solid rgba(34,197,94,0.2); }
+    .flash.danger  { background:rgba(244,63,94,0.12);  color:var(--red);   border:1px solid rgba(244,63,94,0.2); }
+    .flash.info    { background:rgba(59,130,246,0.12); color:var(--blue);  border:1px solid rgba(59,130,246,0.2); }
+
+    /* Toolbar */
+    .toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:20px; }
+    .search-wrap { position:relative; flex:1; min-width:220px; }
+    .search-wrap input {
+      width:100%; background:var(--surface); border:1px solid var(--border);
+      border-radius:var(--radius-sm); padding:9px 12px 9px 36px;
+      font-size:13px; font-family:var(--font-body); color:var(--text-1); outline:none;
+      transition:border-color .2s;
+    }
+    .search-wrap input:focus { border-color:var(--accent); }
+    .search-wrap input::placeholder { color:var(--text-3); }
+    .search-icon { position:absolute; left:12px; top:50%; transform:translateY(-50%); color:var(--text-3); font-size:13px; }
+    select.filter-select {
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm);
+      padding:9px 12px; font-size:13px; font-family:var(--font-body); color:var(--text-2);
+      outline:none; cursor:pointer;
+    }
+    select.filter-select:focus { border-color:var(--accent); }
+    .btn { display:inline-flex; align-items:center; gap:6px; padding:9px 16px; border-radius:var(--radius-sm); font-size:13px; font-weight:500; font-family:var(--font-body); cursor:pointer; text-decoration:none; border:none; transition:opacity .15s,transform .1s; }
+    .btn:hover { opacity:.88; transform:translateY(-1px); }
+    .btn-primary { background:var(--accent); color:#fff; box-shadow:0 2px 12px var(--accent-glow); }
+    .btn-ghost   { background:var(--surface); color:var(--text-2); border:1px solid var(--border); }
+
+    /* Tabs */
+    .tabs { display:flex; gap:2px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); padding:4px; margin-bottom:20px; width:fit-content; }
+    .tab { padding:6px 16px; border-radius:6px; font-size:12px; font-weight:500; color:var(--text-2); text-decoration:none; cursor:pointer; transition:background .15s,color .15s; white-space:nowrap; }
+    .tab:hover { background:var(--surface-2); color:var(--text-1); }
+    .tab.active { background:var(--accent); color:#fff; }
+    .tab-count { font-size:10px; background:rgba(255,255,255,0.1); padding:1px 6px; border-radius:10px; margin-left:4px; }
+    .tab.active .tab-count { background:rgba(255,255,255,0.2); }
+
+    /* Table */
+    .table-wrap { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:hidden; }
+    table { width:100%; border-collapse:collapse; }
+    thead th { padding:11px 16px; text-align:left; font-size:11px; font-weight:500; color:var(--text-3); letter-spacing:.05em; text-transform:uppercase; border-bottom:1px solid var(--border); background:var(--surface-2); white-space:nowrap; }
+    tbody tr { border-bottom:1px solid var(--border); transition:background .12s; }
+    tbody tr:last-child { border-bottom:none; }
+    tbody tr:hover { background:var(--surface-2); }
+    tbody td { padding:12px 16px; font-size:13px; color:var(--text-1); vertical-align:middle; }
+
+    /* Employee name cell */
+    .emp-cell { display:flex; align-items:center; gap:10px; }
+    .emp-avatar-sm {
+      width:34px; height:34px; border-radius:50%; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:13px; font-weight:600; color:var(--accent);
+      background:var(--accent-soft); border:1px solid var(--border);
+      overflow:hidden;
+    }
+    .emp-avatar-sm img { width:100%; height:100%; object-fit:cover; }
+    .emp-cell-name { font-weight:500; color:var(--text-1); }
+    .emp-cell-code { font-size:11px; color:var(--text-3); margin-top:1px; }
+
+    /* Badges */
+    .badge { display:inline-flex; align-items:center; font-size:10px; font-weight:600; padding:3px 9px; border-radius:20px; white-space:nowrap; }
+    .badge-active   { background:rgba(34,197,94,0.12);  color:var(--green); }
+    .badge-inactive { background:rgba(85,90,114,0.2);   color:var(--text-3); }
+    .badge-leave    { background:rgba(245,158,11,0.12); color:var(--amber); }
+    .risk-high      { background:rgba(244,63,94,0.12);  color:var(--red); }
+    .risk-medium    { background:rgba(245,158,11,0.12); color:var(--amber); }
+    .risk-low       { background:rgba(34,197,94,0.12);  color:var(--green); }
+    .risk-none      { background:var(--surface-2); color:var(--text-3); }
+
+    /* Action buttons */
+    .actions { display:flex; gap:6px; }
+    .action-btn { width:28px; height:28px; border-radius:6px; border:1px solid var(--border); background:var(--surface-2); color:var(--text-2); display:flex; align-items:center; justify-content:center; font-size:12px; cursor:pointer; text-decoration:none; transition:background .12s,color .12s,border-color .12s; }
+    .action-btn:hover { background:var(--accent-soft); color:var(--accent); border-color:var(--accent); }
+    .action-btn.del:hover { background:rgba(244,63,94,0.12); color:var(--red); border-color:var(--red); }
+
+    /* Empty state */
+    .empty { padding:60px 20px; text-align:center; color:var(--text-3); }
+    .empty-icon { font-size:40px; margin-bottom:12px; }
+    .empty-title { font-size:15px; font-weight:500; color:var(--text-2); margin-bottom:6px; }
+    .empty-sub   { font-size:13px; margin-bottom:20px; }
+
+    /* Salary */
+    .salary { font-family:'Courier New',monospace; font-size:12px; color:var(--text-2); }
+
+    /* Delete modal */
+    .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:999; align-items:center; justify-content:center; }
+    .modal-overlay.show { display:flex; }
+    .modal { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:28px; max-width:380px; width:90%; }
+    .modal-title { font-size:16px; font-weight:600; color:var(--text-1); margin-bottom:8px; }
+    .modal-body  { font-size:13px; color:var(--text-2); line-height:1.6; margin-bottom:20px; }
+    .modal-actions { display:flex; gap:10px; justify-content:flex-end; }
+    .btn-danger { background:var(--red); color:#fff; }
+
+    @media(max-width:768px){ .sidebar{display:none;} .main{margin-left:0;} }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-mark">V</div>
+      <span class="brand-name">Vaetan</span>
+    </div>
+    <nav class="sidebar-nav">
+      <span class="nav-section-label">Main</span>
+      <a href="{{ url_for('dashboard.index') }}"  class="nav-link"><span class="nav-icon">⊞</span> Dashboard</a>
+      <a href="{{ url_for('employees.index') }}"  class="nav-link active"><span class="nav-icon">👥</span> Employees</a>
+      <a href="{{ url_for('attendance.index') }}" class="nav-link"><span class="nav-icon">📅</span> Attendance</a>
+      <span class="nav-section-label">Finance</span>
+      <a href="{{ url_for('payroll.index') }}"    class="nav-link"><span class="nav-icon">₹</span> Payroll</a>
+      <a href="{{ url_for('payslips.index') }}"   class="nav-link"><span class="nav-icon">📄</span> Payslips</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-pill">
+        <div class="user-avatar">{{ current_user.full_name[0].upper() }}</div>
+        <div class="user-info">
+          <div class="user-name">{{ current_user.full_name }}</div>
+          <div class="user-role">{{ current_user.role }}</div>
+        </div>
+      </div>
+      <a href="{{ url_for('auth.logout') }}" class="logout-btn">⇤ Sign out</a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1>Employees</h1>
+        <p>Manage your workforce — {{ counts.active }} active members</p>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <a href="{{ url_for('employees.export_csv') }}" class="btn btn-ghost">⬇ Export CSV</a>
+        <a href="{{ url_for('employees.add') }}"        class="btn btn-primary">+ Add Employee</a>
+      </div>
+    </header>
+
+    <div class="content">
+
+      <!-- Flash messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <ul class="flash-list">
+            {% for cat, msg in messages %}
+              <li class="flash {{ cat }}">
+                {% if cat == 'success' %}✓{% elif cat == 'danger' %}✕{% else %}ℹ{% endif %} {{ msg }}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endwith %}
+
+      <!-- Toolbar -->
+      <form method="GET" action="{{ url_for('employees.index') }}">
+        <div class="toolbar">
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input type="text" name="q" placeholder="Search by name, email, department…" value="{{ search }}">
+          </div>
+          <select name="dept" class="filter-select" onchange="this.form.submit()">
+            <option value="">All Departments</option>
+            {% for dept in all_depts %}
+              <option value="{{ dept }}" {% if dept_filter == dept %}selected{% endif %}>{{ dept }}</option>
+            {% endfor %}
+          </select>
+          {% if search %}<button type="submit" class="btn btn-ghost">Search</button>{% endif %}
+        </div>
+      </form>
+
+      <!-- Status tabs -->
+      <div class="tabs">
+        <a href="{{ url_for('employees.index', status='active', q=search, dept=dept_filter) }}"   class="tab {% if status_filter == 'active' %}active{% endif %}">Active <span class="tab-count">{{ counts.active }}</span></a>
+        <a href="{{ url_for('employees.index', status='on_leave', q=search, dept=dept_filter) }}" class="tab {% if status_filter == 'on_leave' %}active{% endif %}">On Leave <span class="tab-count">{{ counts.on_leave }}</span></a>
+        <a href="{{ url_for('employees.index', status='inactive', q=search, dept=dept_filter) }}" class="tab {% if status_filter == 'inactive' %}active{% endif %}">Inactive <span class="tab-count">{{ counts.inactive }}</span></a>
+        <a href="{{ url_for('employees.index', status='all', q=search, dept=dept_filter) }}"      class="tab {% if status_filter == 'all' %}active{% endif %}">All <span class="tab-count">{{ counts.all }}</span></a>
+      </div>
+
+      <!-- Table -->
+      <div class="table-wrap">
+        {% if employees %}
+        <table>
+          <thead>
+            <tr>
+              <th>Employee</th>
+              <th>Department</th>
+              <th>Designation</th>
+              <th>Gross Salary</th>
+              <th>Risk</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for emp in employees %}
+            <tr>
+              <td>
+                <div class="emp-cell">
+                  <div class="emp-avatar-sm">
+                    {% if emp.photo_path %}
+                      <img src="{{ url_for('static', filename=emp.photo_path) }}" alt="{{ emp.full_name }}">
+                    {% else %}
+                      {{ emp.full_name[0].upper() }}
+                    {% endif %}
+                  </div>
+                  <div>
+                    <div class="emp-cell-name">{{ emp.full_name }}</div>
+                    <div class="emp-cell-code">{{ emp.employee_code }} · {{ emp.email }}</div>
+                  </div>
+                </div>
+              </td>
+              <td>{{ emp.department }}</td>
+              <td>{{ emp.designation }}</td>
+              <td><span class="salary">₹{{ "{:,.0f}".format(emp.gross_salary) }}</span></td>
+              <td>
+                {% if emp.risk_score %}
+                  <span class="badge risk-{{ emp.risk_label }}">{{ emp.risk_label|title }} {{ emp.risk_score|int }}/10</span>
+                {% else %}
+                  <span class="badge risk-none">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if emp.status == 'active' %}
+                  <span class="badge badge-active">● Active</span>
+                {% elif emp.status == 'on_leave' %}
+                  <span class="badge badge-leave">● On Leave</span>
+                {% else %}
+                  <span class="badge badge-inactive">● Inactive</span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="actions">
+                  <a href="{{ url_for('employees.edit', emp_id=emp.id) }}" class="action-btn" title="Edit">✏</a>
+                  <button class="action-btn del" title="Delete"
+                    onclick="confirmDelete({{ emp.id }}, '{{ emp.full_name }}')">🗑</button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div class="empty">
+          <div class="empty-icon">👥</div>
+          <div class="empty-title">No employees found</div>
+          <div class="empty-sub">
+            {% if search %}No results for "{{ search }}". Try a different search.
+            {% else %}Get started by adding your first employee.{% endif %}
+          </div>
+          <a href="{{ url_for('employees.add') }}" class="btn btn-primary">+ Add First Employee</a>
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Delete confirmation modal -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal">
+    <div class="modal-title">Remove Employee</div>
+    <div class="modal-body" id="deleteModalBody">Are you sure you want to remove this employee? This will also delete their attendance and payroll records.</div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <form id="deleteForm" method="POST">
+        <button type="submit" class="btn btn-danger">Yes, Remove</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function confirmDelete(empId, empName) {
+  document.getElementById('deleteModalBody').textContent =
+    `Remove "${empName}"? This will also delete their attendance and payroll records permanently.`;
+  document.getElementById('deleteForm').action = `/employees/${empId}/delete`;
+  document.getElementById('deleteModal').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('deleteModal').classList.remove('show');
+}
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
