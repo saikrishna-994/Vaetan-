@@ -66,7 +66,9 @@ class TestingConfig(BaseConfig):
 class ProductionConfig(BaseConfig):
     DEBUG   = False
     TESTING = False
-    SQLALCHEMY_DATABASE_URI = os.environ.get("DATABASE_URL")
+    # Fix Render's postgres:// prefix → postgresql://
+    _db_url = os.environ.get("DATABASE_URL", "")
+    SQLALCHEMY_DATABASE_URI = _db_url.replace("postgres://", "postgresql://", 1) if _db_url else None
 
     # Enforce strong secret key in production
     @classmethod
