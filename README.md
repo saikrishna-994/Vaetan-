@@ -170,7 +170,7 @@ Make sure the following are installed:
 ### Step 1 — Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/vaetan.git
+git clone https://github.com/saikrishna-994/vaetan.git
 cd vaetan
 ```
 
