@@ -27,7 +27,7 @@ with app.app_context():
             )
 
             # Hashes the password using Flask-Bcrypt
-            admin.set_password("Admin@123")
+            admin.set_password("admin123")
 
             db.session.add(admin)
             db.session.commit()
@@ -35,7 +35,7 @@ with app.app_context():
             print("=" * 50)
             print("✅ Admin user created successfully!")
             print("Email    :", email)
-            print("Password :", "Admin@123")
+            print("Password :", "admin123")
             print("Role     :", "admin")
             print("=" * 50)
 
